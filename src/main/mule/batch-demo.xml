@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:xml-module="http://www.mulesoft.org/schema/mule/xml-module"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="66c3e302-53ef-4e5b-a619-c541186cb3b5" >
+		<http:listener-connection host="${secure::http.host}" port="${secure::http.port}" />
+	</http:listener-config>
+	<file:config name="File_Config1" doc:name="File Config" doc:id="a748ef72-c09d-4544-aad2-07991ffc6638" >
+		<file:connection workingDir="C:\Users\Admin\Desktop" />
+	</file:config>
+	<file:config name="File_Config2" doc:name="File Config" doc:id="2e388ad4-bf16-4553-8995-8eef11add415" >
+		<file:connection workingDir="C:\Users\Admin\Desktop" />
+	</file:config>
+	<file:config name="File_Config3" doc:name="File Config" doc:id="d8f02a46-ec3b-45aa-bacd-ef692e6ad717" >
+		<file:connection workingDir="C:\Users\Admin\Desktop" />
+	</file:config>
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="3886615e-76b4-4107-a99e-c50443bba20c" file="dev.properties" key="adithya">
+		<secure-properties:encrypt algorithm="Blowfish" />
+	</secure-properties:config>
+	<flow name="batch-demoFlow" doc:id="59e69f60-093e-4d6c-bc73-64ada04c9349" >
+		<http:listener doc:name="Listener" doc:id="e582a784-986e-4267-b884-a230dd4e3e8b" config-ref="HTTP_Listener_config" path="/batchSjdhsdjh" outputMimeType="application/json; streaming=true">
+		</http:listener>
+		<logger level="INFO" doc:name="Logger" doc:id="1a362728-a621-4f30-ab5e-68f21a2007aa" message="Received the request"/>
+		<file:read doc:name="Read" doc:id="aa1ef530-9999-4f45-862f-26bc659da6c4" config-ref="File_Config1" path="C:\Users\Admin\Desktop\organizations-10000.csv"/>
+		<batch:job jobName="batch-demoBatch_Job" doc:id="f5247997-0a7b-4a6e-89ff-4745359d7087" maxFailedRecords="-1" blockSize="10" target="result">
+			<batch:process-records >
+				<batch:step name="SuccessRecords" doc:id="c50bdcdc-a5da-4da8-af16-660ebe51a10b" acceptPolicy="ALL">
+					<logger level="INFO" doc:name="Logger" doc:id="e942e079-7f4b-40b3-b49c-791217914a74" message="LOAD _ RECORDS"/>
+					<ee:transform doc:name="Transform Message" doc:id="e958cff4-b673-408f-9251-033df4617276">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"index": payload[0].Index as Number,
+	"OrganizationId": payload[0].Organization,
+	"Name": payload[0].Name,
+	"Country": payload[0].Country,
+	"Description": payload[0].Description
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<batch:aggregator doc:name="Batch Aggregator" doc:id="88fd18ba-80ea-4234-bf4a-0e1f57b87eeb" streaming="true">
+						<logger level="INFO" doc:name="Logger" doc:id="bafb1cf7-4c64-4246-b0ed-b51f2d63e56a" message="#[%dw 2.0&#10;output application/json deferred=true&#10;---&#10;payload]"/>
+						<file:write doc:name="Write" doc:id="dabe6866-3314-4398-9937-9ec23a505b27" config-ref="File_Config2" path="C:\Users\Admin\Desktop\OUTPUT.txt" mode="APPEND">
+							<file:content ><![CDATA[#[output application/json
+---
+payload]]]></file:content>
+						</file:write>
+					</batch:aggregator>
+				</batch:step>
+				<batch:step name="FailedRecords" doc:id="2e7a9840-ba8a-4b01-b67b-1e8b13d2d450" acceptPolicy="ONLY_FAILURES">
+					<ee:transform doc:name="Transform Message" doc:id="70de77e3-19bc-41b4-827c-2b84550d9ba6" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"index": payload[0].Index as String,
+	"OrganizationId": payload[0].Organization,
+	"Name": payload[0].Name,
+	"Country": payload[0].Country,
+	"Description": payload[0].Description
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<batch:aggregator doc:name="Batch Aggregator" doc:id="240956e7-0c40-4070-a57e-3e5ccbbeaee4" size="10">
+						<file:write doc:name="Write" doc:id="9ae6b116-a1e6-4aa1-bf59-5a3c55c178c3" config-ref="File_Config3" path="C:\Users\Admin\Desktop\OUTPUT FAIL.txt" mode="APPEND">
+							<file:content ><![CDATA[#[output application/json
+---
+payload]]]></file:content>
+						</file:write>
+					</batch:aggregator>
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete>
+				<ee:transform doc:name="Transform Message" doc:id="f79e6800-ef01-45b5-afd1-0046e89d2f9c" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</batch:on-complete>
+		</batch:job>
+		<set-payload value="#[output application/json --- payload]" doc:name="Set Payload" doc:id="f1033114-8310-41d5-83e0-1eb14091cda3" />
+	</flow>
+</mule>

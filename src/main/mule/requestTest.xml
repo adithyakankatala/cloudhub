@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<http:listener-config name="HTTP_Listener_config1" doc:name="HTTP Listener config" doc:id="55cabb07-667a-4af6-bde0-0ee396a85e73" >
+		<http:listener-connection host="0.0.0.0" port="8082" />
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="d7c316c8-d377-4f20-b25f-73d3e9e6147d" >
+	</http:request-config>
+	<flow name="requestTestFlow" doc:id="284679b3-c0f2-436b-99bc-d93fc7308754" >
+		<http:listener doc:name="Listener" doc:id="05dee641-e2c1-4c30-aa8d-311abb5b1f7d" config-ref="HTTP_Listener_config1" path="/test"/>
+		<http:request method="GET" doc:name="Request" doc:id="1eb29d8e-cc58-44ea-a29d-67cacb249db5" url="https://api.agify.io">
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"name[]" : attributes.queryParams.name
+}]]]></http:query-params>
+		</http:request>
+	</flow>
+</mule>

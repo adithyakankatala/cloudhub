@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="organisation" format="csv">
+      <types:shape format="weave" example="examples/organizations-1000.csv"><![CDATA[%dw 2.0
+
+type organisation = Array<{|  Index: String,   "Organization Id": String,   Name: String,   Website: String,   Country: String,   Description: String,   Founded: String,   Industry: String,   "Number of employees": String|}> {"isQuotedString": "false",
+"header": "true",
+"headerLineNumber": "0"}
+
+]]></types:shape>
+      <types:properties>
+        <types:property name="headerLineNumber" value="0"/>
+        <types:property name="header" value="true"/>
+        <types:property name="isQuotedString" value="false"/>
+      </types:properties>
+    </types:type>
+    <types:type name="OUTPUT" format="java">
+      <types:shape format="raml"><![CDATA[#%RAML 1.0 DataType
+type: string]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#dabe6866-3314-4398-9937-9ec23a505b27">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="organisation"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#f79e6800-ef01-45b5-afd1-0046e89d2f9c"/>
+</types:mule>

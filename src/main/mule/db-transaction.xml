@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:bti="http://www.mulesoft.org/schema/mule/ee/bti" xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/ee/bti http://www.mulesoft.org/schema/mule/ee/bti/current/mule-bti-ee.xsd">
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="630c6dbf-16aa-4be5-9cef-1e7efe05eb01" >
+		<db:my-sql-connection host="localhost" port="3307" user="root" password="admin" database="employee" transactionIsolation="READ_UNCOMMITTED" useXaTransactions="true"/>
+	</db:config>
+	<db:config name="Database_Config1" doc:name="Database Config" doc:id="8ba51a7f-450d-4945-9d72-a5868b1a034e" >
+		<db:my-sql-connection host="localhost" port="3307" user="root" password="admin" database="sys" />
+	</db:config>
+	<vm:config name="VM_Config" doc:name="VM Config" doc:id="ea15b9c5-8b91-4f58-8072-9d1d120f9ea2" >
+		<vm:connection />
+		<vm:queues >
+			<vm:queue queueName="adithya" />
+		</vm:queues>
+	</vm:config>
+	<bti:transaction-manager doc:name="Bitronix Transaction Manager" doc:id="c5a9f6ba-6cb5-4812-8725-637c2bca2c10" />
+	<flow name="db-transactionFlow" doc:id="8dbf0162-9c37-42f0-8a3f-16e155d76039" >
+		<http:listener doc:name="Listener" doc:id="fc2d8b3a-5243-4d25-8125-64e2101bf411" config-ref="HTTP_Listener_config" path="/db"/>
+		<try doc:name="Try" doc:id="76f7ee3d-61a6-4c00-a81f-e8a1a908b8b1" transactionalAction="BEGIN_OR_JOIN" transactionType="XA">
+			<db:insert doc:name="Insert" doc:id="f3baf975-db20-4b87-bb43-789671f82224" config-ref="Database_Config" transactionalAction="ALWAYS_JOIN">
+			<db:sql><![CDATA[INSERT INTO employee.persons
+VALUES (:PersonID,:LastName,:FirstName,:Address,:City);]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+	"PersonID": 4,
+	"LastName":"raja",
+	"FirstName":"Mettu",
+	"Address":"nellore",
+	"City":"Hyderabad"
+}]]]></db:input-parameters>
+		</db:insert>
+			<set-payload value="payload" doc:name="Set Payload" doc:id="fc836e8a-40b0-4f21-858f-dc49896cd49e" />
+			<vm:publish queueName="adithya" doc:name="Publish" doc:id="398f5f70-1a58-4810-a679-f1bc6f2ecd57" config-ref="VM_Config" timeoutUnit="MINUTES" transactionalAction="ALWAYS_JOIN"/>
+			<ee:transform doc:name="Transform Message" doc:id="2963b004-63ce-431e-9815-3d0d4d1710a4">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+paylo]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="6ad86d9e-4c80-4af4-a087-7cb87562763d" >
+					<logger level="INFO" doc:name="Logger" doc:id="7fe6a855-635c-40ac-8503-21dc3ab07aa8" message="skip the error"/>
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<vm:consume queueName="adithya" doc:name="Consume" doc:id="1e9c80db-f06f-4760-a923-18952b087e3e" config-ref="VM_Config" timeoutUnit="MINUTES"/>
+	</flow>
+</mule>

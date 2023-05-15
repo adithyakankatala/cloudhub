@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:x12="http://www.mulesoft.org/schema/mule/x12" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/x12 http://www.mulesoft.org/schema/mule/x12/current/mule-x12.xsd">
+	<file:config name="File_Config" doc:name="File Config" doc:id="aca12e8f-46f5-4f78-9eb4-bdd7e9bcc6cd" >
+		<file:connection workingDir="C:\Users\Admin\Desktop" />
+	</file:config>
+	<x12:config name="X12_EDI_Config" doc:name="X12 EDI Config" doc:id="e05fa56c-a994-43c6-9c84-9aa20f86931c" />
+	<flow name="x12Flow" doc:id="373b33d1-d6fa-4110-87c1-b9dc810a8281" >
+		<http:listener doc:name="Listener" doc:id="08408662-2d76-4adb-ac93-7d8b673c5233" config-ref="HTTP_Listener_config" path="/x12"/>
+		<file:read doc:name="Read" doc:id="97bcda59-0142-47c9-b20c-b01607b389c4" config-ref="File_Config" path='#[attributes.queryParams.name ++ ".txt"]'/>
+		<x12:read doc:name="Read" doc:id="b79f7df0-0efe-44ec-8950-1cdf81803104" config-ref="X12_EDI_Config"/>
+		<ee:transform doc:name="Transform Message" doc:id="258c09e2-34c3-4748-9eab-0e9ea9b46fb4" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
